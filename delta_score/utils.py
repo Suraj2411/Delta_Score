@@ -449,7 +449,7 @@ def divergence_score(ref_embedding, ref_masks, ref_idf, hyp_embedding, hyp_masks
     hyp_zero_mask = hyp_masks.sum(dim=1).eq(2)
     ref_zero_mask = ref_masks.sum(dim=1).eq(2)
     P = P.to(hyp_zero_mask.device)
-    R = R.to(hyp_zero_mask.device
+    R = R.to(hyp_zero_mask.device)
 
     if torch.any(hyp_zero_mask):
         print(

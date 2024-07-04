@@ -244,6 +244,7 @@ def get_model(model_type, num_layers, all_layers=None):
         model = T5EncoderModel.from_pretrained(model_type)
     elif "phi" in model_type:
         model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", torch_dtype="auto", trust_remote_code=True)
+        return model
     else:
         model = AutoModel.from_pretrained(model_type)
     model.eval()

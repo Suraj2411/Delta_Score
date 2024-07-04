@@ -9,7 +9,7 @@ from multiprocessing import Pool
 import torch 
 from torch.nn.utils.rnn import pad_sequence
 from tqdm.auto import tqdm
-from transformers import (AutoModel, AutoTokenizer, BertConfig, GPT2Tokenizer, RobertaTokenizer,
+from transformers import (AutoModel, AutoTokenizer, CodeGenTokenizerFast, AutoModelForCausalLM, BertConfig, GPT2Tokenizer, RobertaTokenizer,
                           RobertaConfig, XLMConfig, XLNetConfig)
 from transformers import __version__ as trans_version
 from packaging import version
@@ -178,6 +178,9 @@ def sent_encode(tokenizer, sent):
     sent = sent.strip()
     if sent == "":
         return tokenizer.build_inputs_with_special_tokens([])
+    elif isinstance(tokenizer, CodeGenTokenizerFast):
+        inputs = tokenizer(sent, return_tensors="pt", return_attention_mask=False)
+        return inputs['input_ids']
     elif isinstance(tokenizer, GPT2Tokenizer) or isinstance(tokenizer, RobertaTokenizer):
         # for RoBERTa and GPT-2
         if version.parse(trans_version) >= version.parse("4.0.0"):
@@ -238,6 +241,8 @@ def get_model(model_type, num_layers, all_layers=None):
         from transformers import T5EncoderModel
 
         model = T5EncoderModel.from_pretrained(model_type)
+    elif "phi" in model_type:
+        model = AutoModelForCausalLM.from_pretrained("microsoft/phi-2", torch_dtype="auto", trust_remote_code=True)
     else:
         model = AutoModel.from_pretrained(model_type)
     model.eval()
@@ -310,8 +315,9 @@ def get_model(model_type, num_layers, all_layers=None):
 def get_tokenizer(model_type, use_fast=False):
     # if model_type.startswith("scibert"):
     #     model_type = cache_scibert(model_type)
-
-    if version.parse(trans_version) >= version.parse("4.0.0"):
+    if "phi" in model_type:
+        tokenizer = AutoTokenizer.from_pretrained("microsoft/phi-2", trust_remote_code=True)
+    elif version.parse(trans_version) >= version.parse("4.0.0"):
         tokenizer = AutoTokenizer.from_pretrained(model_type, use_fast=use_fast)
     else:
         assert not use_fast, "Fast tokenizer is not available for version < 4.0.0"
